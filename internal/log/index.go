@@ -34,11 +34,12 @@ func newIndex(f *os.File, c Config) (*index, error) {
 
 	idx.size = uint64(fi.Size())
 
-	// Truncate change file size to desired size
+	// Truncate change file size to desired size.
 	if err = os.Truncate(f.Name(), int64(c.Segment.MaxIndexBytes)); err != nil {
 		return nil, err
 	}
 
+	// Map file to memory.
 	if idx.mmap, err = gommap.Map(idx.file.Fd(), gommap.PROT_READ|gommap.PROT_WRITE, gommap.MAP_SHARED); err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (i *index) Close() error {
 		return err
 	}
 
-	// Make sure to synce to stable memory
+	// Make sure to sync to stable memory
 	if err := i.file.Sync(); err != nil {
 		return err
 	}
@@ -84,4 +85,14 @@ func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
 	out = enc.Uint32(i.mmap[pos : pos+offWidth])
 	pos = enc.Uint64(i.mmap[pos+offWidth : pos+entWidth])
 	return out, pos, nil
+}
+
+func (i *index) Write(off uint32, pos uint64) error {
+	if uint64(len(i.mmap)) < i.size+entWidth {
+		return io.EOF
+	}
+	enc.PutUint32(i.mmap[i.size:i.size+offWidth], off)
+	enc.PutUint64(i.mmap[i.size+offWidth:i.size+entWidth], pos)
+	i.size += uint64(entWidth)
+	return nil
 }
