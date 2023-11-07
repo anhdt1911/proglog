@@ -4,12 +4,13 @@ import (
 	"github.com/stretchr/testify/require"
 	log_v1 "github.com/travisjeffery/proglog/api/v1"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestSegment(t *testing.T) {
-	dir := os.TempDir()
+	dir, _ := ioutil.TempDir("", "segment-test")
 	defer os.RemoveAll(dir)
 
 	want := &log_v1.Record{Value: []byte("hello world")}
