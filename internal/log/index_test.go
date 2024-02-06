@@ -1,6 +1,7 @@
 package log
 
 import (
+	"io"
 	"os"
 	"testing"
 
@@ -40,6 +41,10 @@ func TestIndex(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, want.Pos, pos)
 	}
+
+	_, _, err = idx.Read(int64(len(entries)))
+	require.Equal(t, io.EOF, err)
+	_ = idx.Close()
 
 	f, _ = os.OpenFile(f.Name(), os.O_RDWR, 0600)
 	idx, err = newIndex(f, c)
